@@ -1,12 +1,15 @@
-const express = require('express')
-
-const studentroutes = require('./routes/api');
+const express = require('express');
 require('dotenv').config();
 require('./helpers/init_mongodb');
+const studentroutes = require('./routes/api');      
+const userroutes = require('./routes/userroute'); 
+
 const app = express();
-app.use(express.json()); 
+app.use(express.json());
 app.use(studentroutes);
-// Handling 404 error
+app.use(userroutes);
+
+// 404 handler
 app.use((req, res, next) => {
     const err = new Error("Not Found");
     err.status = 404;
@@ -23,7 +26,7 @@ app.use((err, req, res, next) => {
         }
     });
 });
-app.listen(process.env.port || 4000, function(){
-    console.log('Now listening for requests on: http://localhost:4000');
 
+app.listen(process.env.PORT || 4000, function () {
+    console.log('Now listening for requests on: http://localhost:4000');
 });
