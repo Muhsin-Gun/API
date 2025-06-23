@@ -1,65 +1,73 @@
 const express = require('express');
+const cors = require('cors');
+const rateLimit = require('express-rate-limit');
+const studentRoutes = require('./routes/api');
+const userRoutes = require('./routes/userroute');
 require('dotenv').config();
 require('./helpers/init_mongodb');
-const studentroutes = require('./routes/api');
-const userroutes = require('./routes/userroute');
-const rateLimit = require('express-rate-limit');
-const helmet = require('helmet');
-const cors = require('cors');
 
 const app = express();
 
-// --- Add this logging middleware here ---
+// ✅ CORS config
+app.use(cors({
+  credentials: true,
+  origin: 'http://localhost:3000'
+}));
+
+// ✅ Custom headers (extra CORS support)
 app.use((req, res, next) => {
-  console.log(`Incoming ${req.method} request to ${req.url}`);
+  res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   next();
 });
-// -----------------------------------------
 
-app.use(helmet());
+// ✅ Log every incoming request
+app.use((req, res, next) => {
+  console.log(`📡 ${req.method} ${req.originalUrl}`);
+  next();
+});
 
+// ✅ Parse incoming JSON
+app.use(express.json());
+
+// ✅ Rate limiting
 const limiter = rateLimit({
   max: 100,
   windowMs: 60 * 60 * 1000,
-  message: 'Too many requests from this IP, please try again in an hour!'
+  message: 'Too many requests from this IP, please try again in one hour!'
 });
+app.use('/api', limiter);
 
-const corsOptions = {
-  origin: 'http://localhost:3000',
-  methods: ['GET', 'POST', 'OPTIONS', 'PATCH', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-};
+// ✅ Mount routes
+app.use('/api', studentRoutes);
+app.use('/api', userRoutes);
 
-app.use(cors(corsOptions));
-
-app.use(limiter);
-app.use(express.json());
-
-app.use('/api', studentroutes);
-app.use('/api', userroutes);
-
-// 404 handler
+// ❌ 404 Not Found Handler (with logging)
 app.use((req, res, next) => {
+  console.error(`❌ 404 Not Found: ${req.method} ${req.originalUrl}`);
   const err = new Error("Not Found");
   err.status = 404;
   next(err);
 });
 
-// Error handler
+// ✅ Global error handler
 app.use((err, req, res, next) => {
-  res.status(err.status || 500);
-  res.send({
+  res.status(err.status || 500).send({
     error: {
       status: err.status || 500,
-      message: err.message,
-    },
+      message: err.message
+    }
   });
 });
 
+// ✅ Start server
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
-  console.log(`Now listening for requests on: http://localhost:${PORT}`);
+  console.log(`🚀 Server running at: http://localhost:${PORT}`);
 });
+
+
 
 
