@@ -2,19 +2,20 @@ const Student = require("../models/studentmodels");
 const createError = require("http-errors");
 module.exports = {
     addStudent: async (req, res, next) => {
-        try {
-            const student = new Student(req.body);
-            const result = await student.save();
-            res.send(result);
-        } catch (error) {
-            console.log(error.message);
-            if(errror.name === "ValidationError"){
-                next(createError(422, error.message))
-                return;
-            }
-            next(error)
-        }
-    },
+  try {
+    const student = new Student(req.body);
+    const result = await student.save();
+    res.send(result);
+  } catch (error) {
+    console.log(error.message);
+    if(error.name === "ValidationError"){
+      next(createError(422, error.message));
+      return;
+    }
+    next(error);
+  }
+},
+
     
     getStudent: async(req, res, next) => {
         const id = req.params.id;
